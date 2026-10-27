@@ -1,3 +1,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
+# Local secrets
+.envrc
+
+# Build artifacts
+*.egg-info/
+build/
+dist/

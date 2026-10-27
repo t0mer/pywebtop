@@ -21,6 +21,11 @@ setup(
     install_requires=[
         "httpx>=0.25,<1.0",
     ],
+    entry_points={
+        "console_scripts": [
+            "webtop=webtop.cli:main",
+        ],
+    },
     keywords=["webtop", "smartschool", "education", "api", "async"],
     classifiers=[
         "Development Status :: 3 - Alpha",
