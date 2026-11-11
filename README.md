@@ -65,7 +65,8 @@ from webtop import WebtopClient
 ### Requirements
 
 - Python 3.8+
-- `httpx>=0.25,<1.0` (the only runtime dependency)
+- `httpx>=0.25,<1.0`
+- `cryptography>=3.1` (to compute the login `Data` field)
 - A Webtop (SmartSchool) username and password
 
 ## Quick Start
@@ -121,7 +122,7 @@ WebtopClient(
     username: str,
     password: str,
     *,
-    data: str = "+Aabe7FAdVluG6Lu+0ibrA==",
+    data: Optional[str] = None,
     remember_me: bool = False,
     biometric_login: str = "",
     base_url: str = "https://webtopserver.smartschool.co.il",
@@ -136,7 +137,7 @@ WebtopClient(
 |-----------|---------|-------------|
 | `username` | (required) | Webtop username |
 | `password` | (required) | Webtop password |
-| `data` | `"+Aabe7FAdVluG6Lu+0ibrA=="` | Value sent as the `Data` field of the login request (see [Obtaining the `data` Parameter](#obtaining-the-data-parameter)) |
+| `data` | `None` | Value sent as the `Data` field of the login request. When `None` it is computed from the username (see [The `data` Parameter](#the-data-parameter)) |
 | `remember_me` | `False` | Sent as the `RememberMe` field of the login request |
 | `biometric_login` | `""` | Sent as the `BiometricLogin` field of the login request |
 | `base_url` | `"https://webtopserver.smartschool.co.il"` | Webtop server URL (a trailing `/` is stripped) |
@@ -442,7 +443,7 @@ asyncio.run(check_messages())
 
 [`examples/multi_student_messages.py`](https://github.com/t0mer/pywebtop/blob/main/examples/multi_student_messages.py) logs in, lists every linked student with `get_linked_students()`, switches to each one with `switch_student()`, reads the child's name from the dashboard, and prints up to 20 inbox messages per student.
 
-To run it from a clone, replace the `<username>`, `<password>`, and `<data>` placeholders in the script, then:
+To run it from a clone, replace the `<username>` and `<password>` placeholders in the script, then:
 
 ```bash
 python examples/multi_student_messages.py
@@ -498,23 +499,19 @@ Only username/password login is implemented. There is no captcha, 2FA, or SSO ha
 
 Authentication is handled automatically via httpx's cookie jar. The token is stored as a cookie and included in all subsequent requests. Every request is also sent with `Content-Type: application/json; charset=utf-8`, and redirects are followed.
 
-### Obtaining the `data` Parameter
+### The `data` Parameter
 
-The `data` parameter is an opaque value that the Webtop login page sends in the `Data` field of the login request. To find your specific `data` value:
+The `Data` field of the login request is not institution-specific: the Webtop web client computes it from the username. It sends `encryptStringToServer(username + loginCounter)`, which is AES-256-CBC (PKCS7) of `JSON.stringify(username + loginCounter)` with a fixed key and IV that ship in the web app's JavaScript bundle, base64-encoded. `loginCounter` is the number of failed attempts in the current page session, so it is `0` for a normal login.
 
-1. **Use Browser DevTools:**
-   - Open your browser and navigate to the Webtop login page
-   - Open Developer Tools (F12)
-   - Go to the Network tab
-   - Log in to Webtop
-   - Find the `LoginByUserNameAndPassword` request
-   - Check the request payload - the `Data` field contains the value to use
+pywebtop does the same by default, so you normally don't need to pass `data`. If you want the value yourself:
 
-2. **Default Value:**
-   - `+Aabe7FAdVluG6Lu+0ibrA==` is the library's default value
-   - If login fails, capture your own `data` value using the method above
+```python
+from webtop import encrypt_login_data
 
-**Note:** The `data` parameter appears to be institution-specific. Once you find the correct value for your school, it should remain constant. <!-- TODO: verify what the Data field represents and whether it is institution-specific -->
+encrypt_login_data("my-username")      # what the web client sends on the first attempt
+```
+
+You can still pass `data=...` explicitly to override it.
 
 ## Endpoints Used
 
@@ -609,7 +606,7 @@ Webtop holds data about students, most of whom are minors: names, schools, class
 
 ## Troubleshooting
 
-- **`WebtopLoginError: Login returned status=false ...`** - The server rejected the login. Check the username and password; if they are correct, capture your school's `data` value (see [Obtaining the `data` Parameter](#obtaining-the-data-parameter)).
+- **`WebtopLoginError: Login returned status=false ...`** - The server rejected the login. Check the username and password; if they are correct and you pass `data` explicitly, try leaving it unset so it is computed from the username (see [The `data` Parameter](#the-data-parameter)). After repeated failures the web login starts requiring a CAPTCHA, so don't retry in a loop.
 - **`WebtopLoginError: Not logged in and auto_login=False`** - Call `await client.login()` before other methods, or leave `auto_login=True`.
 - **Methods return `"status": false`** - The endpoint methods return the JSON body as-is. Check the `errorDescription` in the response and the parameters you passed (for example, `encrypted_student_id` must be the encrypted `id` from the login data, not `studentId`).
 - **Requests start failing after a while** - The session token may have expired. Call `await client.login()` again.

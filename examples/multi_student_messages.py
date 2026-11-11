@@ -10,12 +10,11 @@ from webtop import WebtopClient, WebtopLoginError
 async def main():
     USERNAME = "<username>"
     PASSWORD = "<password>"
-    DATA = "<data>"
 
     print(f"Attempting to login as {USERNAME}...")
 
     try:
-        async with WebtopClient(username=USERNAME, password=PASSWORD, data=DATA) as client:
+        async with WebtopClient(username=USERNAME, password=PASSWORD) as client:
             session = await client.login()
             print(f"✅ Logged in successfully!")
             print(f"Name: {session.first_name} {session.last_name}")
