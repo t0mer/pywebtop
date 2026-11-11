@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 
+from .crypto import encrypt_login_data
 from .exceptions import WebtopLoginError, WebtopRequestError
 from .models import WebtopSession
 
@@ -27,7 +28,7 @@ class WebtopClient:
         username: str,
         password: str,
         *,
-        data: str = "+Aabe7FAdVluG6Lu+0ibrA==",
+        data: Optional[str] = None,
         remember_me: bool = False,
         biometric_login: str = "",
         base_url: str = DEFAULT_BASE_URL,
@@ -96,7 +97,7 @@ class WebtopClient:
                 json={
                     "UserName": self._username,
                     "Password": self._password,
-                    "Data": self._data,
+                    "Data": self._data if self._data is not None else encrypt_login_data(self._username),
                     "RememberMe": self._remember_me,
                     "BiometricLogin": self._biometric_login,
                 },

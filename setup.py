@@ -20,6 +20,7 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "httpx>=0.25,<1.0",
+        "cryptography>=3.1",
     ],
     keywords=["webtop", "smartschool", "education", "api", "async"],
     classifiers=[
