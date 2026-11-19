@@ -12,6 +12,13 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BASE_URL = "https://webtopserver.smartschool.co.il"
 
+# Webtop sits behind CloudFront WAF rules that reject the default
+# python-httpx User-Agent with "403 Request Blocked", so send a browser UA.
+DEFAULT_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+)
+
 
 class WebtopClient:
     """
@@ -33,6 +40,7 @@ class WebtopClient:
         base_url: str = DEFAULT_BASE_URL,
         timeout: float = 20.0,
         auto_login: bool = True,
+        user_agent: Optional[str] = DEFAULT_USER_AGENT,
     ):
         logger.info(f"Initializing WebtopClient for user: {username}, base_url: {base_url}")
         self._username = username
@@ -44,11 +52,15 @@ class WebtopClient:
         self._base_url = base_url.rstrip("/")
         self._auto_login = auto_login
 
+        headers = {"Content-Type": "application/json; charset=utf-8"}
+        if user_agent:
+            headers["User-Agent"] = user_agent
+
         try:
             self._http = httpx.AsyncClient(
                 base_url=self._base_url,
                 timeout=timeout,
-                headers={"Content-Type": "application/json; charset=utf-8"},
+                headers=headers,
                 follow_redirects=True,
             )
             logger.debug(f"HTTP client created with timeout={timeout}s")
