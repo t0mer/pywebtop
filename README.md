@@ -127,6 +127,7 @@ WebtopClient(
     base_url: str = "https://webtopserver.smartschool.co.il",
     timeout: float = 20.0,
     auto_login: bool = True,
+    user_agent: Optional[str] = DEFAULT_USER_AGENT,
 )
 ```
 
@@ -142,6 +143,7 @@ WebtopClient(
 | `base_url` | `"https://webtopserver.smartschool.co.il"` | Webtop server URL (a trailing `/` is stripped) |
 | `timeout` | `20.0` | Request timeout in seconds |
 | `auto_login` | `True` | Log in automatically before the first authenticated request |
+| `user_agent` | `DEFAULT_USER_AGENT` (a desktop Chrome string) | `User-Agent` header sent on every request. Webtop's CloudFront WAF rejects the default `python-httpx` User-Agent with `403 Request Blocked`. Pass `None` or `""` to use httpx's default |
 
 ### Methods
 
